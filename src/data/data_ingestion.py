@@ -84,8 +84,9 @@ def main():
     try:
         params = load_params(params_path='params.yaml')
         test_size = params['data_ingestion']['test_size']
-        
-        df = load_data(r"C:\ML\Project ML\mlops_mini_project\notebooks\tweet_emotions.csv")
+        csv_path = params['data_ingestion']['raw_csv']  # ✅ CSV path from params.yaml
+
+        df = load_data(csv_path)
         final_df = preprocess_data(df)
         train_data, test_data = train_test_split(final_df, test_size=test_size, random_state=42)
         save_data(train_data, test_data, data_path='./data')

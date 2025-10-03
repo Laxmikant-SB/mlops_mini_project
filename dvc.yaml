@@ -4,11 +4,15 @@ stages:
   data_ingestion:
     cmd: python src/data/data_ingestion.py
     deps:
-    - src/data/data_ingestion.py
-    params:
-    - data_ingestion.test_size
+      - src/data/data_ingestion.py
+      - params.yaml
+      - notebooks/tweet_emotions.csv  # ✅ Add CSV as a dependency
     outs:
-    - data/raw
+      - data/raw  # The folder your script saves train/test data to
+    params:
+      - data_ingestion.raw_csv
+      - data_ingestion.test_size
+
 
   data_preprocessing:
     cmd: python src/data/data_preprocessing.py
