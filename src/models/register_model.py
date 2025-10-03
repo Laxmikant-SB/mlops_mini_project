@@ -47,7 +47,7 @@ def load_model_info(file_path: str) -> dict:
 
 def main():
     try:
-        model_info_path = 'reports/experiment_info.json'
+        model_info_path = 'reports/model_info.json'
         model_info = load_model_info(model_info_path)
         
         # For DagsHub MLflow, just log the model as an artifact
