@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install dvc[gdrive]  # or dvc[all], depending on your remote
+          pip install dvc[gdrive]
 
       - name: Run pipeline with DVC
         env:
@@ -50,4 +50,6 @@ jobs:
         if: ${{ success() }}
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: python scripts/promote_model.py
+        run: |
+          echo "Promoting model if staging exists..."
+          python scripts/promote_model.py || echo "No staging model to promote, skipping."
