@@ -8,22 +8,18 @@ import mlflow
 import dagshub
 import os
 
-# Set up DagsHub credentials for MLflow tracking
+# -------------------- DagsHub MLflow Setup --------------------
 dagshub_token = os.getenv("DAGSHUB_PAT")
 if not dagshub_token:
     raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
 
-os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_USERNAME"] = "laxmikantbabaleshwar07"  # ✅ username
 os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
 dagshub_url = "https://dagshub.com/laxmikantbabaleshwar07/mlops_mini_project.mlflow"
-repo_owner = "laxmikantbabaleshwar07"
-repo_name = "mlops_mini_project"
+mlflow.set_tracking_uri(dagshub_url)  # ✅ Fixed
 
-# Set up MLflow tracking URI
-mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
-#------------------------------------------------------------------------------------------
-# --- Logging Configuration ---
+# -------------------- Logging --------------------
 logger = logging.getLogger('model_evaluation')
 logger.setLevel(logging.DEBUG)
 
@@ -40,107 +36,70 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-
+# -------------------- Helper Functions --------------------
 def load_model(file_path: str):
-    try:
-        with open(file_path, 'rb') as file:
-            model = pickle.load(file)
-        logger.debug('Model loaded from %s', file_path)
-        return model
-    except Exception as e:
-        logger.error('Error loading model: %s', e)
-        raise
-
+    with open(file_path, 'rb') as file:
+        model = pickle.load(file)
+    logger.debug('Model loaded from %s', file_path)
+    return model
 
 def load_data(file_path: str) -> pd.DataFrame:
-    try:
-        df = pd.read_csv(file_path)
-        logger.debug('Data loaded from %s', file_path)
-        return df
-    except Exception as e:
-        logger.error('Error loading data: %s', e)
-        raise
-
+    df = pd.read_csv(file_path)
+    logger.debug('Data loaded from %s', file_path)
+    return df
 
 def evaluate_model(clf, X_test: np.ndarray, y_test: np.ndarray) -> dict:
-    try:
-        y_pred = clf.predict(X_test)
-        y_pred_proba = clf.predict_proba(X_test)[:, 1]
+    y_pred = clf.predict(X_test)
+    y_pred_proba = clf.predict_proba(X_test)[:, 1]
 
-        metrics_dict = {
-            'accuracy': accuracy_score(y_test, y_pred),
-            'precision': precision_score(y_test, y_pred),
-            'recall': recall_score(y_test, y_pred),
-            'auc': roc_auc_score(y_test, y_pred_proba)
-        }
-        logger.debug('Model evaluation metrics calculated')
-        return metrics_dict
-    except Exception as e:
-        logger.error('Error during evaluation: %s', e)
-        raise
-
+    metrics_dict = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred),
+        'auc': roc_auc_score(y_test, y_pred_proba)
+    }
+    logger.debug('Model evaluation metrics calculated')
+    return metrics_dict
 
 def save_metrics(metrics: dict, file_path: str) -> None:
-    try:
-        with open(file_path, 'w') as file:
-            json.dump(metrics, file, indent=4)
-        logger.debug('Metrics saved to %s', file_path)
-    except Exception as e:
-        logger.error('Error saving metrics: %s', e)
-        raise
-
+    with open(file_path, 'w') as file:
+        json.dump(metrics, file, indent=4)
+    logger.debug('Metrics saved to %s', file_path)
 
 def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
-    try:
-        model_info = {'run_id': run_id, 'model_path': model_path}
-        with open(file_path, 'w') as file:
-            json.dump(model_info, file, indent=4)
-        logger.debug('Model info saved to %s', file_path)
-    except Exception as e:
-        logger.error('Error saving model info: %s', e)
-        raise
+    model_info = {'run_id': run_id, 'model_path': model_path}
+    with open(file_path, 'w') as file:
+        json.dump(model_info, file, indent=4)
+    logger.debug('Model info saved to %s', file_path)
 
-
+# -------------------- Main --------------------
 def main():
     mlflow.set_experiment("dvc-pipeline")
 
     with mlflow.start_run() as run:
-        try:
-            # Load model and test data
-            clf = load_model('./model/model.pkl')
-            test_data = load_data('./data/processed/test_bow.csv')
+        clf = load_model('./model/model.pkl')
+        test_data = load_data('./data/processed/test_bow.csv')
 
-            X_test = test_data.iloc[:, :-1].values
-            y_test = test_data.iloc[:, -1].values
+        X_test = test_data.iloc[:, :-1].values
+        y_test = test_data.iloc[:, -1].values
 
-            # Evaluate model
-            metrics = evaluate_model(clf, X_test, y_test)
-            save_metrics(metrics, 'reports/metrics.json')
+        metrics = evaluate_model(clf, X_test, y_test)
+        save_metrics(metrics, 'reports/metrics.json')
 
-            # Log metrics & params
-            for k, v in metrics.items():
-                mlflow.log_metric(k, v)
+        for k, v in metrics.items():
+            mlflow.log_metric(k, v)
 
-            if hasattr(clf, 'get_params'):
-                for k, v in clf.get_params().items():
-                    mlflow.log_param(k, v)
+        if hasattr(clf, 'get_params'):
+            for k, v in clf.get_params().items():
+                mlflow.log_param(k, v)
 
-            # ⚠️ Temporarily disable model logging for DagsHub
-            # mlflow.sklearn.log_model(clf, "model")
+        save_model_info(run.info.run_id, "model", 'reports/model_info.json')
 
-            # Save model info for DVC
-            save_model_info(run.info.run_id, "model", 'reports/model_info.json')
+        mlflow.log_artifact('reports/metrics.json')
+        mlflow.log_artifact('reports/model_info.json')
+        mlflow.log_artifact('model_evaluation_errors.log')
 
-            # Log artifacts
-            mlflow.log_artifact('reports/metrics.json')
-            mlflow.log_artifact('reports/model_info.json')
-            mlflow.log_artifact('model_evaluation_errors.log')
-
-            logger.info(" Model evaluation completed and logged successfully.")
-        except Exception as e:
-            logger.error('Failed to complete model evaluation: %s', e)
-            print(f"Error: {e}")
-
+        logger.info("✅ Model evaluation completed and logged successfully.")
 
 if __name__ == '__main__':
     main()

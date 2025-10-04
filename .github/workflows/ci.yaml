@@ -18,13 +18,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install dvc[gdrive]  # or dvc[all], depending on your remote
+          pip install "dvc[all]"
 
       - name: Run pipeline with DVC
         env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}   # ✅ This is crucial
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+          MLFLOW_TRACKING_USERNAME: laxmikantbabaleshwar07
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_PAT }}
         run: |
           echo "DAGSHUB_PAT=$DAGSHUB_PAT"
           dvc repro
-
-          
