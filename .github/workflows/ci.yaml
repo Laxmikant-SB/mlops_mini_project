@@ -53,3 +53,9 @@ jobs:
         run: |
           echo "Promoting model if staging exists..."
           python scripts/promote_model.py || echo "No staging model to promote, skipping."
+ 
+      - name: Run Flask app tests
+        if: ${{ success() }}
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: python -m unittest tests/test_flask_app.py
