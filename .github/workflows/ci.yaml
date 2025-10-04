@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Cache pip dependencies   #  Added caching
+      - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
@@ -26,13 +26,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install "dvc[all]"
+          pip install dvc[gdrive]  # or dvc[all]
 
       - name: Run pipeline with DVC
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-          MLFLOW_TRACKING_USERNAME: laxmikantbabaleshwar07
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_PAT }}
         run: |
           echo "DAGSHUB_PAT=$DAGSHUB_PAT"
           dvc repro
+
+      - name: Run model tests
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          python -m unittest tests/test_model.py
