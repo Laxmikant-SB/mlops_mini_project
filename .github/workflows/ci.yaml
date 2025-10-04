@@ -39,7 +39,7 @@ jobs:
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
         run: |
-          python scripts/model_evaluation.py
+          python model_evaluation.py
 
       - name: Run model tests
         env:
