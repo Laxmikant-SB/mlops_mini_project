@@ -26,3 +26,5 @@ jobs:
         run: |
           echo "DAGSHUB_PAT=$DAGSHUB_PAT"
           dvc repro
+
+          
