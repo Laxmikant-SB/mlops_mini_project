@@ -1,5 +1,6 @@
 import unittest
-from app import app  # Adjust the import if app.py is inside a folder
+from flask_app.app import app
+
 
 class FlaskAppTests(unittest.TestCase):
 
