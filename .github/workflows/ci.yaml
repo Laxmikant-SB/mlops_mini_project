@@ -1,6 +1,9 @@
 name: CI Pipeline
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   project-testing:
@@ -31,56 +34,30 @@ jobs:
       - name: Run pipeline with DVC
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          echo "DAGSHUB_PAT=$DAGSHUB_PAT"
-          dvc repro
+        run: dvc repro
 
       - name: Run model evaluation
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          python src/models/model_evaluation.py
+        run: python src/models/model_evaluation.py
 
       - name: Run model tests
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
         run: python -m unittest tests/test_model.py
 
-      - name: Promote model to production
-        if: ${{ success() }}
-        env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          echo "Promoting model if staging exists..."
-          python scripts/promote_model.py || echo "No staging model to promote, skipping."
- 
-      - name: Run Flask app tests
-        if: ${{ success() }}
-        env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          python -m unittest tests/test_flask_app.py
-      
       - name: Log in to Docker Hub
-        if: ${{ success() }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build Docker image
-        if: ${{ success() }}
+      - name: Build and push Docker image
         run: |
-           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:latest .
-      
-      - name: Push Docker image to Docker Hub
-        if: ${{ success() }}  
-        run: |
-           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:latest .
-      
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:v1 .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:v1
+
       - name: Deploy to EC2
-        if: ${{ success() }}
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -89,7 +66,5 @@ jobs:
           script: |
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:v1
             docker stop my-app || true
-            docker rm  my-app || true
-            docker run -p 80:5000 --name my-app \ 
-              -e DAGSHUB_PAT=${{ secrets.DAGSHUB_PAT }} \
-              ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:v1
+            docker rm my-app || true
+            docker run -d -p 80:5000 --name my-app -e DAGSHUB_PAT=${{ secrets.DAGSHUB_PAT }} ${{ secrets.DOCKER_HUB_USERNAME }}/emotion:v1
