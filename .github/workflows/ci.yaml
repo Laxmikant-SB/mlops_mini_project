@@ -84,4 +84,6 @@ jobs:
             docker run -d -p 8000:5000 -e DAGSHUB_PAT=${{ secrets.DAGSHUB_PAT }} --name  emotion_ecr 544468261694.dkr.ecr.eu-north-1.amazonaws.com/emotion_ecr:v1
 
 
+
+
             
