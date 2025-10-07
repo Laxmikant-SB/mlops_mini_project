@@ -7,15 +7,23 @@ Instead of focusing on accuracy improvement, **the main goal was to implement en
 
 **Tech Stack**
 Category	          Tools / Libraries
+
 Language	           Python 
+
 Data Versioning	       DVC
+
 Experiment Tracking    MLflow
+
 CI/CD	               GitHub Actions
+
 Containerization	   Docker
+
 Cloud Deployment	   AWS EC2 + ECR
+
 Web Framework	       Flask
 
 **Project Pipeline**
+
 <img width="661" height="693" alt="Screenshot 2025-10-06 234315" src="https://github.com/user-attachments/assets/1848f61c-32c5-49a9-813c-f39662560e70" />
 
 
